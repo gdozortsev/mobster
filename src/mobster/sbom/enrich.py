@@ -1,14 +1,11 @@
 from datetime import datetime
 from abc import ABC, abstractmethod
-import os
 from pathlib import Path
-from urllib.parse import urlparse
 import json
-from typing import Any
-
-from packageurl import PackageURL
+from typing import Any, Sequence
 
 import mobster.sbom.merge as merge 
+from mobster.sbom.merge import CDXComponent, SPDXPackage
 
 class SBOMEnricher(ABC):
     
@@ -74,59 +71,53 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         Returns:
             dict[str, Any]: The enriched SBOM
         """
+        target_packages = merge.wrap_as_spdx(target_sbom.get("packages", []))
         if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
-            return self.enrich_from_different_type(target_sbom, incoming_sbom)
+            target_sbom["creationInfo"] = self.addToTools(target_sbom["creationInfo"], incoming_sbom["metadata"]["tools"])
+            target_sbom["packages"] = self.enrich_from_different_type(target_packages, merge.wrap_as_cdx(incoming_sbom.get("components", [])))
+            return target_sbom
         
         return self.enrich_from_same_type(target_sbom, incoming_sbom) 
-
+    
     def enrich_from_same_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError("TODO: implement this")
 
     #NOTE: this is the target for the use case: Enrich SPDX SBOM produced by llm_compress with the OWASP CycloneDX AIBOM
-    def enrich_from_different_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
-
-        tools = self.getToolNames(incoming_sbom)
-        for tool in tools:
-            target_sbom["creationInfo"]["creators"].append(f"Tool: {tool}")
-        new_package = self.make_SPDXPackage_from_CDXComponent(incoming_sbom)
-        target_sbom["packages"].append(new_package[0])
-        return target_sbom
+    def enrich_from_different_type(self, target_packages: Sequence[SPDXPackage], incoming_components: Sequence[CDXComponent]):
+        new_packages = []
+        for component in incoming_components:
+            component_purl = component.purl()
+            for package in target_packages:
+                    for purl in package.all_purls():
+                        #ignore version, just need the URL
+                        #assumes that there is a matching purl made by hermeto
+                        if component_purl.type == purl.type and component_purl.namespace == purl.namespace and component_purl.name == purl.name:
+                            package = self.enrichPackage(package.unwrap(), component.unwrap())
+                    new_packages.append(package.unwrap())
+        return new_packages
     
-    def make_SPDXPackage_from_CDXComponent(self, sbom: dict[str, Any]) -> dict[str, Any]:
-        components = merge.wrap_as_cdx(sbom.get("components", []))
-
-        packages = []
-        for component in components:
-            if component.data['modelCard']:
-                rebuiltModelCard = self.extractFromModelCard(component.data['modelCard'])
-                rebuiltModelCard = {"SPDXID": self.SPDX_to_CDX_id(component.purl()), **rebuiltModelCard}
-                packages.append(rebuiltModelCard)
-        return packages
-
-
-    def extractFromModelCard(self, modelCard: dict[str, Any]) -> dict[str, Any]:
+    def addToTools(self, creationInfo: dict[str,Any], tools: dict[str,Any]):
+        for component in tools["components"]:
+            creationInfo["creators"].append(f"Tool: {component["name"]}")
+        return creationInfo
+    def enrichPackage(self, package: dict[str,Any], component: dict[str,Any]):
         
-        rebuiltModelCard = {}
+        modelCard = component["modelCard"]
         annotations = []
         for field in modelCard['properties']:
             fieldName, fieldValue = field['name'], field['value']
 
             #bomFormat doesn't go in SPDX and serialNumber gets rebuilt as the SPDX id
             #specversion doesn't matter because we're using the SPDX version of the original
-            if fieldName == 'bomFormat' or fieldName =='serialNumber' or fieldName == 'specVersion':
+            prefer_original = ['bomformat', 'serialNumber', 'specVersion', 'external_references']
+            if fieldName in prefer_original:
                 continue
-
-            if fieldName == 'external_references':
-                rebuiltModelCard["externalRefs"] = self.transformExternalRefs(fieldValue)
-                continue
-
 
             #TODO: fix this path!!
-
-            print("IS IT HEREEE: ", os.getcwd())
             spdxFieldName = self.getFieldName("SPDXmappings2.3.json", fieldName)
-            if spdxFieldName:
-                rebuiltModelCard[spdxFieldName] = fieldValue 
+            #don't overwrite the field if its in the original SBOM, but add it in if its not
+            if spdxFieldName and not (fieldName in package):
+                package[spdxFieldName] = fieldValue 
                 continue 
 
 
@@ -135,35 +126,9 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
                 self.makeAnnotationFromField(spdxAIFieldName, fieldValue) 
                 annotations.append(self.makeAnnotationFromField(spdxAIFieldName, fieldValue))
 
-        rebuiltModelCard["annotations"] = annotations
-        return rebuiltModelCard
+        package["annotations"].extend(annotations)
+        return SPDXPackage(package)
     
-    def getToolNames(self, sbom: dict[str, Any]):
-        tools = []
-        components = sbom["metadata"]["tools"]["components"]
-        if len(components) > 0:
-             for comp in components:
-                tools.append(comp["name"])
-        return tools
-    
-    def transformExternalRefs(self, refs_string):
-        try:
-            external_refs_list = json.loads(refs_string)
-        except json.JSONDecodeError:
-            return []
-
-        transformed_refs_list = []
-        for ref in external_refs_list:
-            parsed_url = urlparse(ref["url"])
-            namespace = parsed_url.netloc.split(".")[0]
-            path = parsed_url.path.strip('/')
-            transformed_refs_list.append({
-                    "referenceCategory": "PACKAGE_MANAGER",
-                    "referenceLocator": f"pkg:{namespace}/{path}",
-                    "referenceType": "purl"
-                })
-        return transformed_refs_list
-
     def makeAnnotationFromField(self, field, value):
         annotation = {"annotationDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                       "annotationType" : "OTHER",
@@ -181,28 +146,8 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         if fieldName in mappings:
             return  mappings[fieldName]['SPDX_Equivalent']
         return None
-    
-    def SPDX_to_CDX_id(self, purl: PackageURL):
-        package_name = purl.name
 
-        #extract the namespace
-        namespace_parts = purl.namespace.split('/') if purl.namespace else []
-        
-        if namespace_parts:
-            namespace_identifier = namespace_parts[0]
-        else:
-            namespace_identifier = ""
 
-        if namespace_identifier:
-            identifier_base = f"{namespace_identifier}-{package_name}"
-        else:
-            identifier_base = package_name
-
-        spdx_id = f"SPDXRef-Package-{identifier_base}"
-        spdx_id = spdx_id.replace('/', '-') 
-        
-        return spdx_id
-    
 
 
 def _create_enricher(
