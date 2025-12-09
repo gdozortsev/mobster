@@ -642,7 +642,7 @@ def enrich_oci_image_parser(subparsers: Any) -> None:
         "--sbom",
         type=Path,
         help="Path to the SBOM file to be enriched",
-        action="append",
+        required=True,
     )
     enrich_oci_image_parser.add_argument(
         "--enrichment-file",
