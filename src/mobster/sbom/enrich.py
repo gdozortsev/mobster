@@ -1,7 +1,7 @@
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-import json
+import json, os
 from typing import Any, Sequence
 
 import mobster.sbom.merge as merge 
@@ -102,32 +102,40 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         return creationInfo
     def enrichPackage(self, package: dict[str,Any], component: dict[str,Any]):
         
-        modelCard = component["modelCard"]
-        annotations = []
-        for field in modelCard['properties']:
-            fieldName, fieldValue = field['name'], field['value']
+        if "modelCard" in component:
+            modelCard = component["modelCard"]
+            annotations = []
+            
+            for field in modelCard['properties']:
+                fieldName, fieldValue = field['name'], field['value']
 
-            #bomFormat doesn't go in SPDX and serialNumber gets rebuilt as the SPDX id
-            #specversion doesn't matter because we're using the SPDX version of the original
-            prefer_original = ['bomformat', 'serialNumber', 'specVersion', 'external_references']
-            if fieldName in prefer_original:
-                continue
+                #bomFormat doesn't go in SPDX and serialNumber gets rebuilt as the SPDX id
+                #specversion doesn't matter because we're using the SPDX version of the original
+                prefer_original = ['bomformat', 'serialNumber', 'specVersion', 'external_references']
+                if fieldName in prefer_original:
+                    continue
 
-            #TODO: fix this path!!
-            spdxFieldName = self.getFieldName("SPDXmappings2.3.json", fieldName)
-            #don't overwrite the field if its in the original SBOM, but add it in if its not
-            if spdxFieldName and not (fieldName in package):
-                package[spdxFieldName] = fieldValue 
-                continue 
+                #TODO: fix this path!!
+                spdxFieldName = self.getFieldName("src/mobster/sbom/SPDXmappings2.3.json", fieldName)
+                #don't overwrite the field if its in the original SBOM, but add it in if its not
+                if spdxFieldName and not (fieldName in package):
+                    package[spdxFieldName] = fieldValue 
+                    continue 
 
 
-            spdxAIFieldName = self.getFieldName("SPDXmappingAI.json", fieldName)
-            if spdxAIFieldName:   
-                self.makeAnnotationFromField(spdxAIFieldName, fieldValue) 
-                annotations.append(self.makeAnnotationFromField(spdxAIFieldName, fieldValue))
+                spdxAIFieldName = self.getFieldName("src/mobster/sbom/SPDXmappingAI.json", fieldName)
+                if spdxAIFieldName:   
+                    self.makeAnnotationFromField(spdxAIFieldName, fieldValue) 
+                    annotations.append(self.makeAnnotationFromField(spdxAIFieldName, fieldValue))
+                    continue 
 
-        package["annotations"].extend(annotations)
+                print(f"The field {fieldName} does not correspond to any SPDX field or AI field. Skipping over field {field}")
+
+            package["annotations"].extend(annotations)
+
+        #TODO: should this look in something else besides modelCard? like metadata?
         return SPDXPackage(package)
+        
     
     def makeAnnotationFromField(self, field, value):
         annotation = {"annotationDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),

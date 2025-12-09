@@ -356,7 +356,7 @@ def test_case_spdx_multiple_syft() -> GenerateOciImageTestCase:
         ),
     )
 
-
+    
 @pytest.fixture()
 def test_case_cyclonedx_with_additional() -> GenerateOciImageTestCase:
     """Test case with CycloneDX format and additional base images."""
@@ -380,6 +380,32 @@ def test_case_cyclonedx_with_additional() -> GenerateOciImageTestCase:
             base_image_digest_file=Path("dummy_path"),  # Will be mocked
         ),
         expected_sbom_path=Path("tests/sbom/test_oci_generate_data/generated.cdx.json"),
+    )
+
+@dataclass
+class EnrichOciImageCommandArgs:
+    sbom: Path
+    enrichment_file: Path
+
+
+@dataclass
+class EnrichOciImageTestCase:
+    args: EnrichOciImageCommandArgs
+    expected_sbom_path: Path
+
+@pytest.fixture()
+def test_case_enrich_spdx_with_owasp() -> EnrichOciImageTestCase:
+    """Test case with SPDX format to enrich"""
+    return EnrichOciImageTestCase(
+        args=EnrichOciImageCommandArgs(
+            sbom= Path(
+                    "tests/sbom/test_enrich_data/llm_compress_spdx.json"
+                ),
+            enrichment_file= Path(
+                    "tests/sbom/test_enrich_data/TinyLlama_TinyLlama-1.1B-Chat-v1.0_aibom.json"
+                )
+        ),
+        expected_sbom_path=Path("tests/sbom/test_enrich_data/TinyLlama_TinyLlama-1.1B-Chat-v1.0_aibom.json"),
     )
 
 
