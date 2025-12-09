@@ -608,13 +608,10 @@ def enrich_command_parser(subparsers: Any) -> None:
     """
     A parser for enriching SBOMs.
     """
-    """
-    Create the command parser for generating SBOM documents.
-    """
     enrich_parser = subparsers.add_parser(
         "enrich", help="Enrich an SBOM document for given content type"
     )
-    enrich_parser = enrich_parser.add_subparsers(dest="type", required=True)
+    enrich_subparsers = enrich_parser.add_subparsers(dest="type", required=True)
 
     enrich_parser.add_argument(
         "--skip-validation",
@@ -629,13 +626,13 @@ def enrich_command_parser(subparsers: Any) -> None:
         "to stdout.",
     )
 
-    enrich_subparsers = enrich_parser.add_subparsers(dest="type", required=True)
-    generate_augment_oci_image_parser(enrich_subparsers)
+    enrich_oci_image_parser(enrich_subparsers)
 
-def generate_enrich_oci_image_parser(subparsers: Any) -> None:
+def enrich_oci_image_parser(subparsers: Any) -> None:
     """
     A parser for augmenting SBOMs for OCI images.
     """
+
     enrich_oci_image_parser = subparsers.add_parser(
         "oci-image",
         help="enrich SBOM documents with additional information from a json"
@@ -653,7 +650,6 @@ def generate_enrich_oci_image_parser(subparsers: Any) -> None:
         required=True,
         help="path to the mapped json spec file in JSON format",
     )
-    #TODO: rename this? enrichment file is bleh. Also, do I need other fields here? prob need an image
 
     enrich_oci_image_parser.set_defaults(func=enrich.EnrichImageCommand)
     

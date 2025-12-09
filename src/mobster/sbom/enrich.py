@@ -115,15 +115,17 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
                 if fieldName in prefer_original:
                     continue
 
-                #TODO: fix this path!!
-                spdxFieldName = self.getFieldName("src/mobster/sbom/SPDXmappings2.3.json", fieldName)
+                script_path = Path(__file__).resolve()
+                script_dir = script_path.parent
+                
+                spdxFieldName = self.getFieldName(f"{script_dir}/enrich_tools/SPDXmappings2.3.json", fieldName)
                 #don't overwrite the field if its in the original SBOM, but add it in if its not
                 if spdxFieldName and not (fieldName in package):
                     package[spdxFieldName] = fieldValue 
                     continue 
 
-
-                spdxAIFieldName = self.getFieldName("src/mobster/sbom/SPDXmappingAI.json", fieldName)
+                
+                spdxAIFieldName = self.getFieldName(f"{script_dir}/enrich_tools/SPDXmappingAI.json", fieldName)
                 if spdxAIFieldName:   
                     self.makeAnnotationFromField(spdxAIFieldName, fieldValue) 
                     annotations.append(self.makeAnnotationFromField(spdxAIFieldName, fieldValue))
