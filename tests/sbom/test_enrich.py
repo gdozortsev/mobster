@@ -18,7 +18,7 @@ def data_dir() -> Path:
     ],
 )
 
-async def test_enrich_sboms(
+async def test_enrich_sboms_spdx_cdx(
     original_sbom: Path,
     owasp_sbom:Path,
     data_dir: Path,
@@ -30,6 +30,27 @@ async def test_enrich_sboms(
 
     
     new_sbom = await enrich_sbom(original_sbom_path, owasp_sbom_path)
-    # new_sbom = await enrich_sbom(original_sbom, owasp_sbom)
     with open('enriched_sbom.json', 'w') as f:
+        json.dump(new_sbom, f, indent=2)
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "gemma_cdx, owasp_gemma_sbom",
+    [
+        (Path("original_gemma.json"), Path("gemma_owasp.json")),
+    ],
+)
+async def test_enrich_sboms_cdx_cdx(
+    gemma_cdx: Path,
+    owasp_gemma_sbom:Path,
+    data_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,     
+):
+    monkeypatch.chdir(data_dir)
+    original_sbom_path = data_dir / gemma_cdx
+    owasp_sbom_path = data_dir / owasp_gemma_sbom
+
+    
+    new_sbom = await enrich_sbom(original_sbom_path, owasp_sbom_path)
+    with open('enriched_sbom_gemma.json', 'w') as f:
         json.dump(new_sbom, f, indent=2)

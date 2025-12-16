@@ -3,17 +3,17 @@
 __all__ = ["EnrichImageCommand"]
 
 import json
-import logging
+import logging, os
 from argparse import ArgumentError
 from pathlib import Path
 from typing import Any
 
 from mobster.sbom.enrich import enrich_sbom
 from mobster.cmd.base import Command
+from mobster.cmd.augment import SBOMRefDetail
 
 logging.captureWarnings(True)  # CDX validation uses `warn()`
 LOGGER = logging.getLogger(__name__)
-
 
 class EnrichImageCommand(Command):
     """
@@ -43,7 +43,7 @@ class EnrichImageCommand(Command):
         ):
             raise ArgumentError(
                 None,
-                "Both sbom and the ernichment file must be provided",
+                "Both sbom and the enrichment file must be provided",
             )
 
         return await enrich_sbom(Path(self.cli_args.sbom), Path(self.cli_args.enrichment_file))
@@ -54,9 +54,17 @@ class EnrichImageCommand(Command):
         """
         LOGGER.debug("Generating SBOM document for OCI image")
 
-        merged_sbom_dict = await self._handle_bom_inputs()
+        enriched_sbom_dict = await self._handle_bom_inputs()
 
-        return merged_sbom_dict
+        #TODO: fix this!
+        #if an output path is provided, save there, otherwise save in current directory
+        output_path = self.cli_args.output if self.cli_args.output else os.getcwd()
+        
+        print(os.getcwd())
+        with open(Path(output_path), 'w') as f:
+            json.dump(enriched_sbom_dict, f, indent=2)
+
+        return enriched_sbom_dict
 
     async def save(self) -> None:
         """

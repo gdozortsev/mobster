@@ -43,16 +43,59 @@ class CycloneDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         Returns:
             dict[str, Any]: The enriched SBOM
         """
+
+        target_components = merge.wrap_as_cdx(target_sbom["components"])
+        incoming_components = merge.wrap_as_cdx(incoming_sbom["components"])
         if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
-            return self.enrich_from_same_type(target_sbom, incoming_sbom)
+            target_sbom["components"] = self.enrich_from_same_type(target_components, incoming_components)
+            return target_sbom
         
         return self.enrich_from_different_type(target_sbom, incoming_sbom)
     
-    def enrich_from_same_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError("TODO: implement this")
-
+    def enrich_from_same_type(self, target_sbom: Sequence[CDXComponent], incoming_sbom: Sequence[CDXComponent]) -> dict[str, Any]:
+        newComponents = []
+        for target_component in target_sbom: 
+            for incoming_component in incoming_sbom:
+                if target_component.purl() == incoming_component.purl():
+                    newModelCard = self.mergeModelCards(target_component.unwrap(), incoming_component.unwrap())
+                    if newModelCard:
+                        target_component.unwrap()["modelCard"] = newModelCard 
+                
+            newComponents.append(target_component.unwrap())
+        return newComponents
+                
+           
     def enrich_from_different_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError("TODO: implement this")
+
+
+    def mergeModelCards(self, target_component: dict[str,Any], incoming_component: dict[str, Any]):
+        if not "modelCard" in target_component: 
+            return incoming_component["modelCard"]
+        
+        newModelCard = target_component["modelCard"]
+
+        newModelCard["modelParameters"] = incoming_component["modelCard"]["modelParameters"]
+        
+        if "modelCard" in incoming_component: 
+            '''
+            parts of a modelCard:
+            modelParameters
+                - architectureFamily
+                - inputs: [{format: value}]
+                - modelArchitecture
+                - outputs: [{format: value}]
+                - task
+            properties:
+                - {name : value}
+            '''
+            newProperties = [] if not "properties" in newModelCard else newModelCard["properties"]
+            targetProperties = incoming_component["modelCard"]["properties"]
+            #add everything from incoming properties that isn't already in the target properties
+            [p for p in newProperties if not p in targetProperties]
+            newModelCard["properties"] = newProperties + [p for p in newProperties if not p in targetProperties]
+
+        return newModelCard
         
     
 class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
@@ -111,7 +154,7 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
 
                 #bomFormat doesn't go in SPDX and serialNumber gets rebuilt as the SPDX id
                 #specversion doesn't matter because we're using the SPDX version of the original
-                prefer_original = ['bomformat', 'serialNumber', 'specVersion', 'external_references']
+                prefer_original = ['bomFormat', 'serialNumber', 'specVersion', 'external_references', 'downloadLocation']
                 if fieldName in prefer_original:
                     continue
 
