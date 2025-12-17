@@ -154,7 +154,7 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
 
                 #bomFormat doesn't go in SPDX and serialNumber gets rebuilt as the SPDX id
                 #specversion doesn't matter because we're using the SPDX version of the original
-                prefer_original = ['bomFormat', 'serialNumber', 'specVersion', 'external_references', 'downloadLocation']
+                prefer_original = ['bomFormat', 'serialNumber', 'specVersion', 'external_references', 'downloadLocation', 'version']
                 if fieldName in prefer_original:
                     continue
 

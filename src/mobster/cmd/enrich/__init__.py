@@ -5,6 +5,7 @@ __all__ = ["EnrichImageCommand"]
 import json
 import logging, os
 from argparse import ArgumentError
+import os
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +61,6 @@ class EnrichImageCommand(Command):
         #if an output path is provided, save there, otherwise save in current directory
         output_path = self.cli_args.output if self.cli_args.output else os.getcwd()
         
-        print(os.getcwd())
         with open(Path(output_path), 'w') as f:
             json.dump(enriched_sbom_dict, f, indent=2)
 

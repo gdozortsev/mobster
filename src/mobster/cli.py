@@ -611,6 +611,13 @@ def enrich_command_parser(subparsers: Any) -> None:
     enrich_parser = subparsers.add_parser(
         "enrich", help="Enrich an SBOM document for given content type"
     )
+    enrich_subparsers = enrich_parser.add_subparsers(dest="type", required=True)
+
+    # enrich_parser.add_argument(
+    #     "--skip-validation",
+    #     help="Skip validating the SBOM before output.",
+    #     action="store_true",
+    # )
 
     enrich_parser.add_argument(
         "--output",
