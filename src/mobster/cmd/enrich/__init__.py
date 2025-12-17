@@ -5,6 +5,7 @@ __all__ = ["EnrichImageCommand"]
 import json
 import logging
 from argparse import ArgumentError
+import os
 from pathlib import Path
 from typing import Any
 
@@ -54,9 +55,16 @@ class EnrichImageCommand(Command):
         """
         LOGGER.debug("Generating SBOM document for OCI image")
 
-        merged_sbom_dict = await self._handle_bom_inputs()
+        enriched_sbom_dict = await self._handle_bom_inputs()
 
-        return merged_sbom_dict
+        #TODO: fix this!
+        #if an output path is provided, save there, otherwise save in current directory
+        output_path = self.cli_args.output if self.cli_args.output else os.getcwd()
+        
+        with open(Path(output_path), 'w') as f:
+            json.dump(enriched_sbom_dict, f, indent=2)
+
+        return enriched_sbom_dict
 
     async def save(self) -> None:
         """
