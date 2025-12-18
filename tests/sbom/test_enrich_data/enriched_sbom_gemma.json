@@ -211,6 +211,15 @@
           "name": "OWASP AIBOM Generator",
           "type": "application",
           "version": "1.0.0"
+        },
+        {
+          "bom-ref": "pkg:generic/owasp-genai/owasp-aibom-generator@1.0.0",
+          "manufacturer": {
+            "name": "OWASP GenAI Security Project"
+          },
+          "name": "OWASP AIBOM Generator",
+          "type": "application",
+          "version": "1.0.0"
         }
       ]
     }

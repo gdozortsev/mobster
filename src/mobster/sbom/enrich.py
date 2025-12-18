@@ -39,6 +39,10 @@ def wrap_as_element(items: Iterable[dict[str, Any]]) -> list[SBOMElement]:
     return list(map(SBOMElement, items))
 
 def purl_without_version(purl: PackageURL): 
+    '''
+    Returns the inputted purl without the version.
+    Allows for equality of purls regardless of version
+    '''
     purl = purl._replace(version=None)
     return purl
 
@@ -102,6 +106,8 @@ class CycloneDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         try:
             if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
                 incoming_components = merge.wrap_as_cdx(incoming_sbom["components"])
+                #doesn't account for duplicaes (assumes its a new tool)
+                target_sbom["metadata"]["tools"]["components"].extend(incoming_sbom["metadata"]["tools"]["components"])
                 target_sbom["components"] = general_enrich(self.mergeModelCards,target_components, incoming_components)
             else: 
                 incoming_packages = merge.wrap_as_spdx(incoming_sbom["packages"])
