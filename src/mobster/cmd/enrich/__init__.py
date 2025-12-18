@@ -3,7 +3,7 @@
 __all__ = ["EnrichImageCommand"]
 
 import json
-import logging
+import logging, os
 from argparse import ArgumentError
 import os
 from pathlib import Path
@@ -11,10 +11,10 @@ from typing import Any
 
 from mobster.sbom.enrich import enrich_sbom
 from mobster.cmd.base import Command
+from mobster.cmd.augment import SBOMRefDetail
 
 logging.captureWarnings(True)  # CDX validation uses `warn()`
 LOGGER = logging.getLogger(__name__)
-
 
 class EnrichImageCommand(Command):
     """
@@ -44,7 +44,7 @@ class EnrichImageCommand(Command):
         ):
             raise ArgumentError(
                 None,
-                "Both sbom and the ernichment file must be provided",
+                "Both sbom and the enrichment file must be provided",
             )
 
         return await enrich_sbom(Path(self.cli_args.sbom), Path(self.cli_args.enrichment_file))

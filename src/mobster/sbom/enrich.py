@@ -2,10 +2,65 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
 import json, os
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence
+
+from packageurl import PackageURL
+from dataclasses import dataclass
 
 import mobster.sbom.merge as merge 
-from mobster.sbom.merge import CDXComponent, SPDXPackage
+from mobster.sbom.merge import CDXComponent, SBOMItem, SPDXPackage
+
+@dataclass
+class SBOMElement(SBOMItem):
+    data: dict[str,Any]
+
+    def id(self) -> str:
+        """No-op since this is a not an actual SBOM."""
+
+    def name(self) -> str:
+        """Get the name of the SBOM item."""
+        self.data["name"]
+
+    def version(self) -> str:
+        """No-op since this is a not an actual SBOM."""
+
+    def purl(self) -> PackageURL | None:
+        if purl_str := self.data.get("purl"):
+            return merge.try_parse_purl(purl_str)
+        return None
+    
+    def unwrap(self) -> dict[str,Any]:
+        return self.data 
+
+def wrap_as_element(items: Iterable[dict[str, Any]]) -> list[SBOMElement]:
+    """
+    Wrap a list of dictionary elements into SBOMElement objects.
+    """
+    return list(map(SBOMElement, items))
+
+def purl_without_version(purl: PackageURL): 
+    purl = purl._replace(version=None)
+    return purl
+
+def all_purls(sbom: Sequence[SBOMItem]):
+    all_purls = {}
+    for index, component in enumerate(sbom):
+        all_purls[purl_without_version(component.purl())] = index
+    return all_purls
+
+def general_enrich(enrichFunc, target_sbom: Sequence[SBOMItem], incoming_sbom: Sequence[SBOMItem]):
+        target_purls = all_purls(target_sbom)
+        
+        target_packages = [component.unwrap() for component in target_sbom]
+        for element in incoming_sbom: 
+            if purl_without_version(element.purl()) in target_purls:
+                index = target_purls[purl_without_version(element.purl())]
+                component_to_enrich = target_sbom[index]
+                newPackage = enrichFunc(component_to_enrich.unwrap(), element.unwrap())
+                if newPackage: 
+                    target_packages[index] = newPackage 
+        return target_packages
+
 
 class SBOMEnricher(ABC):
     
@@ -43,16 +98,69 @@ class CycloneDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         Returns:
             dict[str, Any]: The enriched SBOM
         """
-        if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
-            return self.enrich_from_same_type(target_sbom, incoming_sbom)
+        target_components = merge.wrap_as_cdx(target_sbom["components"])
+        try:
+            if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
+                incoming_components = merge.wrap_as_cdx(incoming_sbom["components"])
+                target_sbom["components"] = general_enrich(self.mergeModelCards,target_components, incoming_components)
+            else: 
+                incoming_packages = merge.wrap_as_spdx(incoming_sbom["packages"])
+                target_sbom["components"] = self.enrich_from_spdx(target_sbom, incoming_packages)
+        except ValueError as e: 
+            print(f"{e}, treating enrichment file as json")
+            incoming_elements = wrap_as_element(incoming_sbom["components"])
+            target_sbom["components"] = general_enrich(self.convertToModelCard,target_components, incoming_elements)
         
-        return self.enrich_from_different_type(target_sbom, incoming_sbom)
-    
-    def enrich_from_same_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
+        return target_sbom
+                
+           
+    def enrich_from_spdx(self, target_sbom: Sequence[CDXComponent], incoming_sbom: Sequence[SPDXPackage]) -> dict[str, Any]:
         raise NotImplementedError("TODO: implement this")
 
-    def enrich_from_different_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError("TODO: implement this")
+
+    def convertToModelCard(self, target_component: dict[str, Any], incoming_component: dict[str,Any]):
+        '''
+        This is intended for when the incoming component is a json file, not an sbom. 
+        We can convert the incoming fields to a model card format, then pass it in the mergeModelCards func
+        '''
+        print("HERE!!")
+        incoming_component["modelCard"] = {
+            "modelParameters": {},
+            "properties": incoming_component["data"]
+        }
+
+        return self.mergeModelCards(target_component, incoming_component)
+    def mergeModelCards(self, target_component: dict[str,Any], incoming_component: dict[str, Any]):
+        if not "modelCard" in target_component: 
+            target_component["modelCard"] = incoming_component["modelCard"]
+            return target_component
+        
+        newModelCard = target_component["modelCard"]
+
+        #TODO: should probably also be adding on to the modelParameters?
+        newModelCard["modelParameters"] = incoming_component["modelCard"]["modelParameters"]
+        
+        if "modelCard" in incoming_component: 
+            '''
+            parts of a modelCard:
+            modelParameters
+                - architectureFamily
+                - inputs: [{format: value}]
+                - modelArchitecture
+                - outputs: [{format: value}]
+                - task
+            properties:
+                - {name : value}
+            '''
+            newProperties = [] if not "properties" in newModelCard else newModelCard["properties"]
+            targetProperties = incoming_component["modelCard"]["properties"]
+            #add everything from incoming properties that isn't already in the target properties
+            [p for p in newProperties if not p in targetProperties]
+            newModelCard["properties"] = newProperties + [p for p in newProperties if not p in targetProperties]
+
+
+        target_component["modelCard"] = newModelCard
+        return target_component
         
     
 class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
@@ -74,27 +182,14 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         target_packages = merge.wrap_as_spdx(target_sbom.get("packages", []))
         if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
             target_sbom["creationInfo"] = self.addToTools(target_sbom["creationInfo"], incoming_sbom["metadata"]["tools"])
-            target_sbom["packages"] = self.enrich_from_different_type(target_packages, merge.wrap_as_cdx(incoming_sbom.get("components", [])))
+            target_sbom["packages"] = general_enrich(self.enrichPackage, target_packages, merge.wrap_as_cdx(incoming_sbom.get("components", [])))
             return target_sbom
         
         return self.enrich_from_same_type(target_sbom, incoming_sbom) 
     
     def enrich_from_same_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError("TODO: implement this")
-
-    #NOTE: this is the target for the use case: Enrich SPDX SBOM produced by llm_compress with the OWASP CycloneDX AIBOM
-    def enrich_from_different_type(self, target_packages: Sequence[SPDXPackage], incoming_components: Sequence[CDXComponent]):
-        new_packages = []
-        for component in incoming_components:
-            component_purl = component.purl()
-            for package in target_packages:
-                    for purl in package.all_purls():
-                        #ignore version, just need the URL
-                        #assumes that there is a matching purl made by hermeto
-                        if component_purl.type == purl.type and component_purl.namespace == purl.namespace and component_purl.name == purl.name:
-                            package = self.enrichPackage(package.unwrap(), component.unwrap())
-                    new_packages.append(package.unwrap())
-        return new_packages
+        
     
     def addToTools(self, creationInfo: dict[str,Any], tools: dict[str,Any]):
         for component in tools["components"]:
@@ -136,7 +231,7 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
             package["annotations"].extend(annotations)
 
         #TODO: should this look in something else besides modelCard? like metadata?
-        return SPDXPackage(package)
+        return package
         
     
     def makeAnnotationFromField(self, field, value):

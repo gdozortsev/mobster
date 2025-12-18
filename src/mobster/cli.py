@@ -626,12 +626,27 @@ def enrich_command_parser(subparsers: Any) -> None:
         "to stdout.",
     )
 
+    enrich_subparsers = enrich_parser.add_subparsers(dest="type", required=True)
+
     enrich_oci_image_parser(enrich_subparsers)
 
 def enrich_oci_image_parser(subparsers: Any) -> None:
     """
     A parser for augmenting SBOMs for OCI images.
     """
+
+    def validated_digest(value: str) -> str:
+        assert re.match(r"^sha256:[0-9a-f]{64}$", value, re.IGNORECASE), (
+            "The digest must start with 'sha256:' and contain 64 hexa symbols!"
+        )
+        return value.lower()
+
+    def validated_pullspec(value: str) -> str:
+        assert re.match(PULLSPEC_PATTERN, value), (
+            "The pullspec must contain a tag! "
+            "Use the '<registry>/<repository>:<tag>' format."
+        )
+        return value
 
     enrich_oci_image_parser = subparsers.add_parser(
         "oci-image",
@@ -650,6 +665,10 @@ def enrich_oci_image_parser(subparsers: Any) -> None:
         required=True,
         help="path to the mapped json spec file in JSON format",
     )
-
+    enrich_oci_image_parser.add_argument(
+        "--image",
+        help="OCI image in the form "
+        "<registry>/<repository>:<tag>",
+    )
     enrich_oci_image_parser.set_defaults(func=enrich.EnrichImageCommand)
     

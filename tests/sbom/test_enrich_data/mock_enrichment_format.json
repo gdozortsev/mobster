@@ -1,0 +1,17 @@
+{
+    "components": [
+        {
+            "purl": "pkg:huggingface/stupid-model@1.0",
+            "data": [
+                {
+                    "name": "limitation",
+                    "value": "can't do anything :("
+                },
+                {
+                    "name": "typeOfModel",
+                    "value": "text-generation"
+                }
+            ]
+        }
+    ]
+}
