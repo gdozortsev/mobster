@@ -1,164 +1,114 @@
 {
-  "bomFormat": "CycloneDX",
-  "components": [
-    {
-      "authors": [
-        {
-          "name": "google"
-        }
-      ],
-      "bom-ref": "pkg:huggingface/google/gemma-3-4b-it@1.0",
-      "copyright": "NOASSERTION",
-      "description": "No description available",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://huggingface.co/google/gemma-3-4b-it"
-        }
-      ],
-      "group": "google",
-      "licenses": [
-        {
-          "license": {
-            "id": "unknown",
-            "url": "https://spdx.org/licenses/"
-          }
-        }
-      ],
-      "manufacturer": {
-        "name": "google",
-        "url": [
-          "https://huggingface.co/google"
-        ]
-      },
-      "name": "gemma-3-4b-it",
-      "publisher": "google",
-      "purl": "pkg:huggingface/stupid-model@1.0",
-      "supplier": {
-        "name": "google",
-        "url": [
-          "https://huggingface.co/google"
-        ]
-      },
-      "type": "machine-learning-model",
-      "version": "1.0",
-      "modelCard": {
-        "modelParameters": {},
-        "properties": [
-          {
-            "name": "limitation",
-            "value": "can't do anything :("
-          },
-          {
-            "name": "typeOfModel",
-            "value": "text-generation"
-          }
-        ]
-      }
-    }
-  ],
-  "dependencies": [
-    {
-      "dependsOn": [
-        "pkg:huggingface/google/gemma-3-4b-it@1.0"
-      ],
-      "ref": "pkg:generic/google%2Fgemma-3-4b-it@1.0"
-    }
-  ],
-  "externalReferences": [
-    {
-      "type": "distribution",
-      "url": "https://huggingface.co/google/gemma-3-4b-it"
-    }
-  ],
-  "metadata": {
-    "component": {
-      "bom-ref": "pkg:generic/google%2Fgemma-3-4b-it@1.0",
-      "copyright": "NOASSERTION",
-      "description": "No description available",
-      "name": "gemma-3-4b-it",
-      "purl": "pkg:generic/google%2Fgemma-3-4b-it@1.0",
-      "type": "application",
-      "version": "1.0"
-    },
-    "properties": [
-      {
-        "name": "primaryPurpose",
-        "value": "image-text-to-text"
-      },
-      {
-        "name": "suppliedBy",
-        "value": "google"
-      },
-      {
-        "name": "typeOfModel",
-        "value": "transformer"
-      },
-      {
-        "name": "bomFormat",
-        "value": "CycloneDX"
-      },
-      {
-        "name": "specVersion",
-        "value": "1.6"
-      },
-      {
-        "name": "serialNumber",
-        "value": "urn:uuid:google-gemma-3-4b-it"
-      },
-      {
-        "name": "version",
-        "value": "1.0.0"
-      },
-      {
-        "name": "primaryPurpose",
-        "value": "image-text-to-text"
-      },
-      {
-        "name": "suppliedBy",
-        "value": "google"
-      },
-      {
-        "name": "licenses",
-        "value": "gemma"
-      },
-      {
-        "name": "limitation",
-        "value": "in the model's responses, and developer\n    and end-user education can help mitigate against malicious applications of\n    VLMs, -   Training Data\n    -   The quality and diversity of the training data significantly\n        influence the model's capabilities, These models have certain limitations that users should be aware of, of our evaluations was they included only\nEnglish language prompts"
-      },
-      {
-        "name": "safetyRiskAssessment",
-        "value": "in\n    line with [our policies][safety-policies], policies, including child sexual abuse and\n    exploitation, and Fairness\n    -   VLMs trained on large-scale, real-world text and image data can\n        reflect socio-cultural biases embedded in the training material, ** Evaluation of text-to-text and image to text prompts\n    covering safety policies including, harassment, violence and gore, and hate\n    speech, identified and mitigations:\n\n-   **Perpetuation of biases**: It's encouraged to perform continuous\n    monitoring (using evaluation metrics, human review) and the exploration of\n    de-biasing techniques during model training, fine-tuning, and other use\n    cases, policies including bias, stereotyping, and harmful\n    associations or inaccuracies, are essential, testing, we saw major improvements in the categories of\nchild safety, content safety, and representational harms relative to previous\nGemma models, safeguards based on their specific\n    product policies and application use cases, Council\nas part of release review, The development of vision-language models (VLMs) raises several ethical\nconcerns, Ethics and safety evaluation approach and results, filters to evaluate the\nmodel capabilities and behaviors"
-      },
-      {
-        "name": "typeOfModel",
-        "value": "transformer"
-      },
-      {
-        "name": "downloadLocation",
-        "value": "https://huggingface.co/google/gemma-3-4b-it/tree/main"
-      },
-      {
-        "name": "external_references",
-        "value": "[{\"type\": \"website\", \"url\": \"https://huggingface.co/google/gemma-3-4b-it\", \"comment\": \"Model repository\"}, {\"type\": \"distribution\", \"url\": \"https://huggingface.co/google/gemma-3-4b-it/tree/main\", \"comment\": \"Model files\"}]"
-      }
-    ],
-    "timestamp": "2025-11-20T14:14:29.275829Z",
-    "tools": {
-      "components": [
-        {
-          "bom-ref": "pkg:generic/owasp-genai/owasp-aibom-generator@1.0.0",
-          "manufacturer": {
-            "name": "OWASP GenAI Security Project"
-          },
-          "name": "OWASP AIBOM Generator",
-          "type": "application",
-          "version": "1.0.0"
-        }
-      ]
-    }
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2025-10-29T14:26:43Z",
+    "creators": [
+      "Tool: cachi2",
+      "Organization: red hat",
+      "Tool: Mobster-1.0.0"
+    ]
   },
-  "serialNumber": "urn:uuid:d596f37a-91b8-489e-87c8-5a880cc29f40",
-  "specVersion": "1.6",
-  "version": 1
+  "dataLicense": "CC0-1.0",
+  "name": "quay.io/redhat-user-workloads/konflux-ai-sig-tenant/llm-compressor-demo@sha256:4ed8cbadf08100ff79f079017c4189fa129c63965fbb7636ee7b656b42caf5b6",
+  "spdxVersion": "SPDX-2.3",
+  "documentNamespace": "https://konflux-ci.dev/spdxdocs/quay.io/redhat-user-workloads/konflux-ai-sig-tenant/llm-compressor-demo@sha256:4ed8cbadf08100ff79f079017c4189fa129c63965fbb7636ee7b656b42caf5b6-40c78607-931b-4a64-9f90-2f9f7244b81c",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-image-llm-compressor-demo-567624f7e2ddc3a2feebc1cd886d1d5cf125ae0db0c908a1548719930f8e657c",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4ed8cbadf08100ff79f079017c4189fa129c63965fbb7636ee7b656b42caf5b6"
+        }
+      ],
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/llm-compressor-demo@sha256:4ed8cbadf08100ff79f079017c4189fa129c63965fbb7636ee7b656b42caf5b6?arch=amd64&repository_url=quay.io/redhat-user-workloads/konflux-ai-sig-tenant/llm-compressor-demo",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseDeclared": "NOASSERTION",
+      "name": "llm-compressor-demo_amd64",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "7560c6e8a2e69d6db15fae5d0bbe56a4c7f09491"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-TinyLlama-TinyLlama-1.1B-Chat-v1.0-fe8a4ea1ffedaf415f4da2f062534de366a451e6-73b429a44483c2784ea71c729a66a7af241da4feec573255c760b7f94dc49c6f",
+      "annotations": [
+        {
+          "annotationDate": "2025-10-29T14:26:43Z",
+          "annotationType": "OTHER",
+          "annotator": "Tool: cachi2:jsonencoded",
+          "comment": "{\"name\": \"cachi2:found_by\", \"value\": \"cachi2\"}"
+        },
+        {
+          "annotationDate": "2025-12-18T17:14:17Z",
+          "annotationType": "OTHER",
+          "annotator": "Tool: OWASP AIBOM Generator",
+          "comment": "limitation : new test limitation for tiny llama"
+        },
+        {
+          "annotationDate": "2025-12-18T17:14:17Z",
+          "annotationType": "OTHER",
+          "annotator": "Tool: OWASP AIBOM Generator",
+          "comment": "typeOfModel : text-generation"
+        }
+      ],
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:huggingface/TinyLlama/TinyLlama-1.1B-Chat-v1.0@fe8a4ea1ffedaf415f4da2f062534de366a451e6",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": true,
+      "name": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "versionInfo": "fe8a4ea1ffedaf415f4da2f062534de366a451e6"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-garage-bAInd-Open-Platypus-37141edbdb7826378cce118c46a109b813e1f038-557d7b1a58f10d702f49cd06d7ccd977db09429ee39f63eadc99972b7e65c7ee",
+      "annotations": [
+        {
+          "annotationDate": "comment",
+          "annotationType": "OTHER",
+          "annotator": "Tool: cachi2:jsonencoded",
+          "comment": "{\"name\": \"cachi2:found_by\", \"value\": \"cachi2\"}"
+        }
+      ],
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:huggingface/garage-bAInd/Open-Platypus@37141edbdb7826378cce118c46a109b813e1f038",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": true,
+      "name": "garage-bAInd/Open-Platypus",
+      "versionInfo": "37141edbdb7826378cce118c46a109b813e1f038"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-image-llm-compressor-demo-567624f7e2ddc3a2feebc1cd886d1d5cf125ae0db0c908a1548719930f8e657c",
+      "comment": "",
+      "relatedSpdxElement": "SPDXRef-Package-TinyLlama-TinyLlama-1.1B-Chat-v1.0-fe8a4ea1ffedaf415f4da2f062534de366a451e6-73b429a44483c2784ea71c729a66a7af241da4feec573255c760b7f94dc49c6f",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-image-llm-compressor-demo-567624f7e2ddc3a2feebc1cd886d1d5cf125ae0db0c908a1548719930f8e657c",
+      "comment": "",
+      "relatedSpdxElement": "SPDXRef-Package-garage-bAInd-Open-Platypus-37141edbdb7826378cce118c46a109b813e1f038-557d7b1a58f10d702f49cd06d7ccd977db09429ee39f63eadc99972b7e65c7ee",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-image-llm-compressor-demo-567624f7e2ddc3a2feebc1cd886d1d5cf125ae0db0c908a1548719930f8e657c",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
 }

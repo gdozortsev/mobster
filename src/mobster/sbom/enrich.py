@@ -129,7 +129,6 @@ class CycloneDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         This is intended for when the incoming component is a json file, not an sbom. 
         We can convert the incoming fields to a model card format, then pass it in the mergeModelCards func
         '''
-        print("HERE!!")
         incoming_component["modelCard"] = {
             "modelParameters": {},
             "properties": incoming_component["data"]
@@ -186,12 +185,18 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
             dict[str, Any]: The enriched SBOM
         """
         target_packages = merge.wrap_as_spdx(target_sbom.get("packages", []))
-        if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
-            target_sbom["creationInfo"] = self.addToTools(target_sbom["creationInfo"], incoming_sbom["metadata"]["tools"])
-            target_sbom["packages"] = general_enrich(self.enrichPackage, target_packages, merge.wrap_as_cdx(incoming_sbom.get("components", [])))
-            return target_sbom
+        try:
+            if merge._detect_sbom_type(incoming_sbom) == "cyclonedx":
+                target_sbom["creationInfo"] = self.addToTools(target_sbom["creationInfo"], incoming_sbom["metadata"]["tools"])
+                target_sbom["packages"] = general_enrich(self.enrichPackage, target_packages, merge.wrap_as_cdx(incoming_sbom.get("components", [])))
+            else: 
+                return self.enrich_from_same_type(target_sbom, incoming_sbom)
+        except ValueError as e:
+            print(f"{e}, treating enrichment file as json")
+            target_sbom["packages"] = general_enrich(self.addAsAnnotations, target_packages, wrap_as_element(incoming_sbom.get("components", [])))
+
         
-        return self.enrich_from_same_type(target_sbom, incoming_sbom) 
+        return target_sbom
     
     def enrich_from_same_type(self, target_sbom: dict[str, Any], incoming_sbom: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError("TODO: implement this")
@@ -239,7 +244,12 @@ class SPDXEnricher(SBOMEnricher):  # pylint: disable=too-few-public-methods
         #TODO: should this look in something else besides modelCard? like metadata?
         return package
         
-    
+    #TODO i may have made the annotations too constrictive... either have this check my spdx fields file or make the other function not check them
+    def addAsAnnotations(self, target_component: dict[str,Any], incoming_component: dict[str,Any]):
+        newAnnotations = [self.makeAnnotationFromField(element["name"], element["value"]) for element in incoming_component["data"]]
+        print(newAnnotations)
+        target_component["annotations"].extend(newAnnotations)
+        return target_component
     def makeAnnotationFromField(self, field, value):
         annotation = {"annotationDate": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                       "annotationType" : "OTHER",
