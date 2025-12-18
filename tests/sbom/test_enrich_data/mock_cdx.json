@@ -33,7 +33,7 @@
       },
       "name": "gemma-3-4b-it",
       "publisher": "google",
-      "purl": "pkg:huggingface/google/gemma-3-4b-it@1.0",
+      "purl": "pkg:huggingface/stupid-model@1.0",
       "supplier": {
         "name": "google",
         "url": [
